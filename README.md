@@ -1,3 +1,3 @@
 # image-processing
 
-コンテナ作成時にopencvをビルドするので時間がかかるかも
+It may take some time to start the container, since Opencv is built and installed when the Docker container is built. 
