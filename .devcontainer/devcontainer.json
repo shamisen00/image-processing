@@ -1,0 +1,38 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.209.6/containers/ubuntu
+{
+	"name": "Cpp dev",
+	"workspaceFolder": "/workspace",
+	
+	"extensions": [
+		"ms-vscode.cpptools-extension-pack",
+		"austin.code-gnu-global",
+		"DavidAnson.vscode-markdownlint",
+		"ms-vscode.cpptools",
+		"ms-vscode.cmake-tools"
+	],
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"VARIANT": "debian-11"
+		}
+	},
+	"customizations": {
+		"vscode": {}
+	},
+	"runArgs": [
+		"--cap-add=SYS_PTRACE",
+		"--security-opt",
+		"seccomp=unconfined"
+	],
+	"remoteUser": "vscode",
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "uname -a",
+
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	// "remoteUser": "vscode",
+}
