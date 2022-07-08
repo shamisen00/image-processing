@@ -15,6 +15,19 @@ RUN if [ "${REINSTALL_CMAKE_VERSION_FROM_SOURCE}" != "none" ]; then \
     fi \
     && rm -f /tmp/reinstall-cmake.sh
 
+RUN mkdir /usr/local/lib/pkgconfig
+
+COPY ./conf/opencv4.pc /usr/local/lib/pkgconfig/
+
+RUN git clone https://github.com/Itseez/opencv.git \
+    && git clone https://github.com/Itseez/opencv_contrib.git \
+    && cd opencv \
+    && mkdir build \
+    && cd build/ \
+    && cmake -DOPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local .. \
+    && make -j8 2>&1 |tee make.log \
+    && sudo make install
+
 # [Optional] Uncomment this section to install additional vcpkg ports.
 # RUN su vscode -c "${VCPKG_ROOT}/vcpkg install <your-port-name-here>"
 

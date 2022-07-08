@@ -2,6 +2,8 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.209.6/containers/ubuntu
 {
 	"name": "Cpp dev",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "dev",
 	"workspaceFolder": "/workspace",
 	
 	"extensions": [
@@ -9,7 +11,14 @@
 		"austin.code-gnu-global",
 		"DavidAnson.vscode-markdownlint",
 		"ms-vscode.cpptools",
-		"ms-vscode.cmake-tools"
+		"ms-vscode.cmake-tools",
+		"eamodio.gitlens",
+		"mhutchie.git-graph",
+		"MS-vsliveshare.vsliveshare-pack",
+		"CodeStream.codestream",
+		"GitHub.github-vscode-theme",
+		"Gruntfuggly.todo-tree",
+		"hediet.vscode-drawio"
 	],
 	"build": {
 		"dockerfile": "Dockerfile",
@@ -25,7 +34,7 @@
 		"--security-opt",
 		"seccomp=unconfined"
 	],
-	"remoteUser": "vscode",
+	"remoteUser": "vscode"
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
