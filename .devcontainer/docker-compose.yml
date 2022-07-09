@@ -8,6 +8,7 @@ services:
       context: ..
       dockerfile: .devcontainer/Dockerfile
 
+
     deploy:
       resources:
         reservations:
@@ -20,7 +21,13 @@ services:
       - ..:/workspace:cached
     
     working_dir: /workspace
+
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
     tty: true
     stdin_open: true
-    command: nvidia-smi
+    command: sleep infinity
+
 

@@ -317,7 +317,6 @@ int main(int argc, char* argv[])
         bool blinkOutput = false;
 
         view = s.nextImage();
-        printf("a\n");
         //-----  If no more image, or got enough, then stop calibration and show result -------------
         if( mode == CAPTURING && imagePoints.size() >= (size_t)s.nrFrames )
         {
@@ -337,7 +336,6 @@ int main(int argc, char* argv[])
                                       release_object);                
                 printf("b\n");
                 }
-            printf("e\n");
             break;
         }
         if(imagePoints.empty()){
@@ -449,14 +447,12 @@ int main(int argc, char* argv[])
         if( key == 'u' && mode == CALIBRATED )
         {
            s.showUndistorted = !s.showUndistorted;
-           printf("r\n");
         }
 
         if( s.inputCapture.isOpened() && key == 'g' )
         {
             mode = CAPTURING;
             imagePoints.clear();
-            printf("t\n");
         }
         //! [await_input]
     }
