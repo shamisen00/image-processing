@@ -18,6 +18,11 @@ int main()
     vector<cv::Point2f> corner;
     cv::Size pattern_size = cv::Size(7, 7);
 
+    
+    int iterationsCount = 500;
+    float reprojectionError = 2.0;
+    float confidence = 0.95; 
+
     img = cv::imread("/workspace/images/5.jpg");
 
     cv::FileStorage fs("/workspace/out_camera_data.yml", cv::FileStorage::READ);
@@ -35,9 +40,11 @@ int main()
             object.push_back(p);
         }
     }
+
+    bool useExtrinsicGuess = false;
     
     cv::Mat rvec, tvec;
-    cv::solvePnP(object, corner, cam_mat, dist_coefs, rvec, tvec);
+    cv::solvePnPRansac(object, corner, cam_mat, dist_coefs, rvec, tvec);
 
     cv::Mat  rMat;
     cv::Rodrigues(rvec, rMat);
