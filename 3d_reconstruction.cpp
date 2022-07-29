@@ -1,12 +1,13 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <vector>
-#include <experimental/filesystem>
+#include <filesystem>
 
 int SavePlyFormat(std::string outputPath, cv::Mat image, cv::Mat image3D) {
 
@@ -38,7 +39,7 @@ int SavePlyFormat(std::string outputPath, cv::Mat image, cv::Mat image3D) {
 int main()
 {
     using namespace std;
-    using namespace std::experimental::filesystem;
+    using namespace std::filesystem;
 
     vector<cv::Mat> imagesR,imagesL;
     vector<vector<cv::Point2f>> img_pointsL, img_pointsR;
@@ -48,18 +49,18 @@ int main()
 
     // 1.ファイルを読み込む
     cv::Mat imgR, imgL;
-    for (const auto & file : directory_iterator("images/Enshuu_cv_04_02(03)/right")){
+    for (const auto & file : directory_iterator("images/test/right")){
         imgR = cv::imread(file.path());
         imagesR.push_back(imgR);
     }
 
-    for (const auto & file : directory_iterator("images/Enshuu_cv_04_02(03)/left")){
+    for (const auto & file : directory_iterator("images/test/left")){
         imgL = cv::imread(file.path());
         imagesL.push_back(imgL);
     }
 
     // 2.カメラパラメーターを読み込む
-    cv::FileStorage fs("../Enshu4_01/params.yaml", cv::FileStorage::READ);
+    cv::FileStorage fs("params.yaml", cv::FileStorage::READ);
 
     fs["Left_Camera Matrix"] >> cam_matL;
     fs["Right_Camera Matrix"] >> cam_matR;
@@ -141,13 +142,13 @@ int main()
         cv::Mat img3d,disp;
         disparity.convertTo(disp, CV_32F, 1 / 16.0);
         cv::reprojectImageTo3D(disp, img3d, Q);
-        cv::imwrite("res.png", disparity_map);
+        cv::imwrite("point_cloud.png", disparity_map);
 
         // 7.3D点群を.ply形式でファイルに保存する
         ostringstream ss;
         ss << std::setfill('0') << std::right << std::setw(2) << i;
 
-        string path = "enshuu04_02_" + ss.str() + ".ply";
+        string path = ss.str() + ".ply";
         SavePlyFormat(path, inputL, img3d);
 
         // 8.3D点群のZ座標を抽出して距離画像(実数)を生成する
@@ -156,8 +157,11 @@ int main()
         cv::Mat zmap = dst[2];
 
         // 9.距離画像(実数)を256諧調の濃淡値に変換して可視化し、ファイルに保存する。
-        cv::FileStorage fs("4_2.yaml", cv::FileStorage::WRITE);
-        fs << "disparity" << abc;
+        cv::Mat zmap_gray;
+        double minz, maxz;
+        cv::minMaxLoc(zmap_gray, &minz, &maxz);
+        disparity.convertTo(zmap_gray, CV_8UC1, 255.0 / (max - min), -255.0 * min / (max - min));
+        fs << "zmap" << zmap_gray;
         fs.release();
     }
 

@@ -6,23 +6,7 @@
 
 using namespace cv;
 using namespace std;
-
-
-// ファイル名読み込み
-bool readStringList( const string& filename, vector<string>& l )
-{
-    l.clear();
-    FileStorage fs(filename, FileStorage::READ);
-    if( !fs.isOpened() )
-        return false;
-    FileNode n = fs.getFirstTopLevelNode();
-    if( n.type() != FileNode::SEQ )
-        return false;
-    FileNodeIterator it = n.begin(), it_end = n.end();
-    for( ; it != it_end; ++it )
-        l.push_back((string)*it);
-    return true;
-}
+using namespace std::filesystem;
 
 void calcBoardCornerPositions(vector<Point3f>& corners, Size boardsize);
 
@@ -30,12 +14,10 @@ void calcBoardCornerPositions(vector<Point3f>& corners, Size boardsize);
 void saveCameraParams(Mat& cameraMatrix, Mat& distCoeffs);
 
 #define squareSize (50)
+#define Num (5)
 
 int main()
 {
-    vector<string> imageListR, imageListL;
-    string inputR = "images/left.xml";
-    string inputL = "images/right.xml";
     cv::Size boardsize = cv::Size(7, 10);
     float grid_width = squareSize * (boardsize.width - 1);
     vector<vector<cv::Point2f>> pointBufsR, pointBufsL;
@@ -44,17 +26,20 @@ int main()
     vector<cv::Mat> imagesR,imagesL;
     vector<int> imgNumber;
 
-    readStringList(inputR, imageListR);
-    readStringList(inputL, imageListL);
-
-    // 1.
-    for(size_t i = 0; i < imageListR.size(); i++ )
-    {
-        imagesR.push_back(imread(imageListR[i], IMREAD_COLOR));
-        imagesL.push_back(imread(imageListL[i], IMREAD_COLOR));
+    // 1.画像読み込み
+    cv::Mat imgR, imgL;
+    for (const auto & file : directory_iterator("images/stereo/right")){
+        imgR = cv::imread(file.path());
+        imagesR.push_back(imgR);
     }
 
-        for(size_t i = 0; i < imageListR.size(); i++ )
+    for (const auto & file : directory_iterator("images/stereo/left")){
+        imgL = cv::imread(file.path());
+        imagesL.push_back(imgL);
+    }
+
+    // 2.コーナー検出
+    for(size_t i = 0; i < imagesR.size(); i++ )
     {
         vector<Point2f> pointBufR, pointBufL;
         
@@ -68,26 +53,15 @@ int main()
         }
     }
 
-    cv::imwrite("01.jpg", imagesL[1]);
     imageSize = imagesR[0].size();
 
     cv::Mat cam_matL, cam_matR;
     cv::Mat dist_coefsL, dist_coefsR;
 
-    vector<cv::Point3f> object;
-    for (int j = 0; j < boardsize.height; j++) {
-        for (int k = 0; k < boardsize.width; k++) {
-
-            cv::Point3f p(j * squareSize, k * squareSize, 0.0);
-            object.push_back(p);
-        }
-    }
-
-    vector<vector<cv::Point3f>> objectPoints;
-    for (int i = 0; i < imgNumber.size(); i++)
-    {
-        objectPoints.push_back(object);
-    }
+    // 3.カメラ校正とパラメータ推定
+    vector<vector<Point3f> > objectPoints(1);
+    calcBoardCornerPositions(objectPoints[0], boardsize);
+    objectPoints.resize(pointBufsR.size(), objectPoints[0]);
 
     cam_matR = cv::initCameraMatrix2D(objectPoints, pointBufsR, imageSize);
     cam_matL = cv::initCameraMatrix2D(objectPoints, pointBufsL, imageSize);
@@ -96,6 +70,7 @@ int main()
 
     double rsm = cv::stereoCalibrate(objectPoints, pointBufsL, pointBufsR, cam_matL, dist_coefsL, cam_matR, dist_coefsR, imageSize, R, T, E, F, cv::CALIB_USE_INTRINSIC_GUESS , cv::TermCriteria(cv::TermCriteria::COUNT + cv::TermCriteria::EPS, 30, 1e-6));
     
+    // 4.平衡化変換を求める
     cv::Mat R1, R2, P1, P2, Q;
     cv::stereoRectify(cam_matL, dist_coefsL, cam_matR, dist_coefsR, imageSize, R, T, R1,  R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, -1,  cv::Size(),0,  0);
 
@@ -104,11 +79,34 @@ int main()
     cv::initUndistortRectifyMap(cam_matR, dist_coefsR, R2, P2, imageSize, CV_32FC1, map1R, map2R);
 
     cv::Mat outL,outR;
-    cv::remap(imagesL[imgNumber[0]], outL, map1L, map2L, cv::INTER_LINEAR);
-    cv::remap(imagesR[imgNumber[0]], outR, map1R, map2R, cv::INTER_LINEAR);
+    cv::remap(imagesL[imgNumber[Num]], outL, map1L, map2L, cv::INTER_LINEAR);
+    cv::remap(imagesR[imgNumber[Num]], outR, map1R, map2R, cv::INTER_LINEAR);
+
+    // 5.画像を並べ、平行線のガイドラインを表示
+    cv::Mat img_out;
+    cv::hconcat( outL, outR,img_out);
+    int width = img_out.size().width;
+    cv::resize(img_out, img_out, cv::Size(), 0.5, 0.5);
+    for (int i = 0; i < img_out.size().height; i++) {
+        if (i % 10 == 0) {
+            cv::line(img_out, cv::Point2f(0, i), cv::Point2f(width, i), (0, 0, 255), 1);
+        }  
+    }
     
-    cv::imwrite("1.jpg", outL);
-    cv::imwrite("2.jpg", outR);
+    cv::imwrite("stereo_scopic.jpg", img_out);
+
+    // 6.パラメータを保存
+    cv::FileStorage fs("params.yaml", cv::FileStorage::WRITE);
+    fs << "Left_Camera Matrix" << cam_matL;
+    fs << "Right_Camera Matrix" << cam_matR;
+    fs << "Left_Distortion" << dist_coefsL;
+    fs << "Right_Distortion" << dist_coefsR;
+    fs << "R1" << R1;
+    fs << "R2" << R2;
+    fs << "P1" << P1;
+    fs << "P2" << P2;
+    fs << "Q" << Q;
+    fs.release();
 
     return 0;
 }
