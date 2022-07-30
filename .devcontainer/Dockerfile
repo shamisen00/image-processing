@@ -9,9 +9,10 @@ ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
 WORKDIR /workspace
 
 RUN apt update && export DEBIAN_FRONTEND=noninteractive \
-    && apt -y install --no-install-recommends git \
+    && apt -y install --no-install-recommends sudo \
+    git \
+    build-essential \
     cmake \
-    make \
     && rm -rf /var/lib/apt/lists/*
 
 # Optionally install the cmake for vcpkg
