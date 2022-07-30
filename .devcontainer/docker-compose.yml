@@ -2,11 +2,13 @@ version: '3'
 
 services:
   dev:
-    container_name: Cpp_dev
+    container_name: Cpp_cuda
 
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+      args:
+        gpus: all
 
 
     deploy:
