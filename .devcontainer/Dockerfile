@@ -2,7 +2,7 @@
 
 # [Choice] Debian / Ubuntu version (use Debian 11, Ubuntu 18.04/22.04 on local arm64/Apple Silicon): debian-11, debian-10, ubuntu-22.04, ubuntu-20.04, ubuntu-18.04
 
-FROM nvidia/cuda:11.6.0-devel-ubuntu20.04
+FROM nvidia/cuda:11.6.0-cudnn8-devel-ubuntu20.04
 
 ARG REINSTALL_CMAKE_VERSION_FROM_SOURCE="none"
 
